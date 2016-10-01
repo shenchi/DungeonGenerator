@@ -1,4 +1,7 @@
 #include "MapGenerator.h"
+#ifdef _DEBUG
+#include <cassert>
+#endif
 
 using namespace std;
 
@@ -42,22 +45,9 @@ void MapGenerator::Start(int cellCount, int randomRadius, int minSideLength, int
 		cells[i].x = posDist(generator);
 		cells[i].y = posDist(generator);
 		cells[i].room = (cells[i].width * cells[i].height > thresholdLength * thresholdLength);
-
-		if (i == 0)
-		{
-			left = cells[i].x;
-			top = cells[i].y;
-			right = left + cells[i].width;
-			bottom = top + cells[i].height;
-		}
-		else
-		{
-			if (cells[i].x < left) left = cells[i].x;
-			if (cells[i].y < top) left = cells[i].y;
-			if (cells[i].x + cells[i].width > right) right = cells[i].x + cells[i].width;
-			if (cells[i].y + cells[i].height > bottom) bottom = cells[i].y + cells[i].height;
-		}
 	}
+
+	UpdateRect();
 
 	state = Started;
 }
@@ -79,6 +69,99 @@ void MapGenerator::Update()
 	case MapGenerator::Finished:
 	default:
 		break;
+	}
+}
+
+void MapGenerator::Gen2DArrayMap(char* map, size_t& width, size_t& height, const char tileTable[NumTileType]) const
+{
+	if (!IsFinished() || (right - left + 1 > (int)width) || (bottom - top + 1 > (int)height))
+	{
+		width = height = 0;
+		return;
+	}
+
+	size_t w = right - left + 1;
+	size_t h = bottom - top + 1;
+
+	memset(map, tileTable[Void], width * height);
+
+	for (auto i = cells.begin(); i != cells.end(); ++i)
+	{
+		if (i->discard) continue;
+
+		size_t l = i->x - left;
+		size_t t = i->y - top;
+		size_t r = l + i->width - 1;
+		size_t b = t + i->height - 1;
+
+#ifdef _DEBUG
+		assert(l >= 0 && t >= 0 && r < w && b < h);
+#endif
+
+		for (size_t y = t; y <= b; ++y)
+		{
+			for (size_t x = l; x <= r; ++x)
+			{
+				if (i->room && (y == t || y == b || x == l || x == r))
+				{
+					map[y * width + x] = tileTable[Wall];
+				}
+				else
+				{
+					map[y * width + x] = tileTable[Walkable];
+				}
+			}
+		}
+	}
+
+	for (auto i = corridors.begin(); i != corridors.end(); ++i)
+	{
+		int l, t, r, b;
+		i->rect(l, t, r, b);
+		l -= left;
+		r -= left;
+		t -= top;
+		b -= top;
+#ifdef _DEBUG
+		assert(l >= 0 && t >= 0 && r < (int)w && b < (int)h);
+#endif
+		for (int y = t; y <= b; ++y)
+		{
+			for (int x = l; x <= r; ++x)
+			{
+				map[y * width + x] = tileTable[Walkable];
+			}
+		}
+	}
+
+	width = w;
+	height = h;
+
+}
+
+void MapGenerator::UpdateRect()
+{
+	const size_t len = cells.size();
+	bool first = true;
+	for (size_t i = 0; i < len; ++i)
+	{
+		if (cells[i].discard) continue;
+
+		if (first)
+		{
+			left = cells[i].x;
+			top = cells[i].y;
+			right = left + cells[i].width;
+			bottom = top + cells[i].height;
+
+			first = false;
+			continue;
+		}
+
+		if (cells[i].x < left) left = cells[i].x;
+		if (cells[i].y < top) top = cells[i].y;
+		if (cells[i].x + cells[i].width - 1 > right) right = cells[i].x + cells[i].width - 1;
+		if (cells[i].y + cells[i].height - 1 > bottom) bottom = cells[i].y + cells[i].height - 1;
 	}
 }
 
@@ -126,6 +209,7 @@ void MapGenerator::Expand()
 
 	if (finished)
 	{
+		UpdateRect();
 		state = Connecting;
 		return;
 	}
@@ -140,11 +224,6 @@ void MapGenerator::Expand()
 		if (forceY[i] > stepLimit) forceY[i] = stepLimit;
 		cells[i].x += forceX[i];
 		cells[i].y += forceY[i];
-
-		if (cells[i].x < left) left = cells[i].x;
-		if (cells[i].y < top) left = cells[i].y;
-		if (cells[i].x + cells[i].width > right) right = cells[i].x + cells[i].width;
-		if (cells[i].y + cells[i].height > bottom) bottom = cells[i].y + cells[i].height;
 	}
 }
 
@@ -209,14 +288,14 @@ void MapGenerator::Connect()
 
 	for (size_t i = 0; i < len; ++i)
 	{
-		int startX = cells[i].cx();
-		int startY = cells[i].cy();
+		int startX = (int)cells[i].cx();
+		int startY = (int)cells[i].cy();
 
 		for (size_t j = i + 1; j < len; ++j)
 		{
 			if (!connections[i * len + j]) continue;
-			int endX = cells[j].cx();
-			int endY = cells[j].cy();
+			int endX = (int)cells[j].cx();
+			int endY = (int)cells[j].cy();
 
 			int width = widthDist(generator);
 
@@ -232,6 +311,8 @@ void MapGenerator::Connect()
 			}
 		}
 	}
+
+	UpdateRect();
 
 	state = Finished;
 }

@@ -23,6 +23,34 @@ struct Corridor
 	int endX;
 	int endY;
 	int width;
+
+	inline void rect(int& left, int& top, int& right, int& bottom) const
+	{
+		left = startX;
+		top = startY;
+		right = endX;
+		bottom = endY;
+		if (right < left) { int t = left; left = right; right = t; }
+		if (bottom < top) { int t = top; top = bottom; bottom = t; }
+		if (left == right)
+		{
+			left -= width / 2;
+			right += (width - 1) / 2;
+		}
+		else
+		{
+			top -= width / 2;
+			bottom += (width - 1) / 2;
+		}
+	}
+};
+
+enum TileType
+{
+	Void = 0,
+	Walkable,
+	Wall,
+	NumTileType
 };
 
 class MapGenerator
@@ -40,6 +68,8 @@ public:
 
 	bool IsFinished() const { return state == Finished; }
 
+	void Gen2DArrayMap(char* map, size_t& width, size_t& height, const char tileTable[NumTileType]) const;
+
 	const std::vector<Cell>& GetCells() const { return cells; }
 	const std::vector<bool>& GetConnections() const { return connections; }
 	const std::vector<Corridor>& GetCorridors() const { return corridors;  }
@@ -50,6 +80,7 @@ public:
 	int Bottom() const { return bottom; }
 
 private:
+	void UpdateRect();
 
 	void Expand();
 	void Connect();
