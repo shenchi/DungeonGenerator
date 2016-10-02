@@ -2,6 +2,7 @@
 #include <chrono>
 #include <ctime>
 #include "MapGenerator.h"
+#include "MapMesh.h"
 
 using namespace std;
 
@@ -13,6 +14,8 @@ namespace
 {
 	MapGenerator mapGen;
 	constexpr char tileTable[NumTileType] = { ' ', '.', '#' };
+	constexpr char tileDensityTable[] = { '.', ' ', '#' };
+	constexpr size_t nTileDensities = sizeof(tileDensityTable) / sizeof(tileDensityTable[0]);
 	char* map = nullptr;
 	size_t mapWidth = 0;
 	size_t mapHeight = 0;
@@ -21,6 +24,7 @@ namespace
 	bool drawGridMap = false;
 	RECT clientRect;
 	int gridStep;
+	MapMesh mesh;
 }
 
 float g_DPIScaleX, g_DPIScaleY, g_DrawingScale;
@@ -100,6 +104,8 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 				(clientRect.right - clientRect.left + 1) / mapWidth,
 				(clientRect.bottom - clientRect.top + 1) / mapHeight);
 			mapGen.Gen2DArrayMap(map, w, h, tileTable);
+			mesh.CreateFromGridMap(map, mapWidth, mapHeight, tileDensityTable, nTileDensities, 1);
+			mesh.GenerateMesh(1.0f, 2.0f);
 		}
 	}
 
@@ -224,17 +230,30 @@ void DrawVectorMap(HWND hWnd)
 
 void DrawGridBox(HDC hdc, int x, int y)
 {
-	Rectangle(hdc, clientRect.left + x * gridStep, 
-		clientRect.top + y * gridStep,
-		clientRect.left + (x + 1) * gridStep ,
-		clientRect.top + (y + 1) * gridStep);
+	Rectangle(hdc, clientRect.left + x * gridStep + 1,
+		clientRect.top + y * gridStep + 1,
+		clientRect.left + (x + 1) * gridStep + 1,
+		clientRect.top + (y + 1) * gridStep + 1);
+}
+
+void DrawGridLine(HDC hdc, int sx, int sy, int tx, int ty)
+{
+	MoveToEx(hdc,
+		clientRect.left + sx * gridStep + 1,
+		clientRect.top + sy * gridStep + 1, nullptr);
+
+	LineTo(hdc,
+		clientRect.left + tx * gridStep + 1,
+		clientRect.top + ty * gridStep + 1);
 }
 
 void DrawGridMap(HWND hWnd)
 {
 	PAINTSTRUCT ps;
 	BeginPaint(hWnd, &ps);
-	HPEN blackPen = CreatePen(PS_SOLID, 1, 0);
+	HPEN blackPen = CreatePen(PS_SOLID, 1, RGB(200, 200, 200));
+	HPEN redPen = CreatePen(PS_SOLID, 2, RGB(200, 0, 0));
+	HPEN bluePen = CreatePen(PS_SOLID, 2, RGB(0, 0, 200));
 	HBRUSH lightBlueBrush = CreateSolidBrush(RGB(200, 200, 255));
 	HBRUSH lightRedBrush = CreateSolidBrush(RGB(255, 200, 200));
 	HGDIOBJ originalPen = SelectObject(ps.hdc, blackPen);
@@ -262,9 +281,19 @@ void DrawGridMap(HWND hWnd)
 		}
 	}
 
+	auto walls = mesh.GetWalls();
+	for (auto i = walls.begin(); i != walls.end(); ++i)
+	{
+		SelectObject(ps.hdc, (i->faceRight ? redPen : bluePen));
+
+		DrawGridLine(ps.hdc, i->sx, i->sy, i->tx, i->ty);
+	}
+
 	SelectObject(ps.hdc, originalPen);
 	SelectObject(ps.hdc, originalBrush);
 	DeleteObject(blackPen);
+	DeleteObject(redPen);
+	DeleteObject(bluePen);
 	DeleteObject(lightBlueBrush);
 	DeleteObject(lightRedBrush);
 	EndPaint(hWnd, &ps);

@@ -21,9 +21,15 @@
     <ClCompile Include="MapGenerator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MapMesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MapGenerator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MapMesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
