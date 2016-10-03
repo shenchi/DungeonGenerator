@@ -18,7 +18,7 @@ MapMesh::~MapMesh()
 {
 }
 
-void MapMesh::CreateFromGridMap(const char* map, int width, int height, const char* tileTypes, size_t nTileTypes, int defaultDensity)
+void MapMesh::CreateFromGridMap(const char* map, int width, int height, const char* tileTypes, int nTileTypes, int defaultDensity)
 {
 	walls.clear();
 
@@ -73,7 +73,7 @@ void MapMesh::CreateFromGridMap(const char* map, int width, int height, const ch
 				}
 				else if (start >= 0 && ((dir < 0 && (den_r != last_den_r || dir != den_delta)) || (dir > 0 && (den_l != last_den_l || dir != den_delta))))
 				{
-					add_line(start, x, y, (dir < 0 ? den_r : den_l), dir);
+					add_line(start, x, y, (dir < 0 ? (int)den_r : (int)den_l), dir);
 
 					if (den_delta != 0)
 					{
@@ -127,8 +127,8 @@ void MapMesh::GenerateMesh(float stepSize, float height, float* colorList)
 
 		float pos[] = {
 			sx * stepSize,      0, sy * stepSize,
-			sx * stepSize, height, sy * stepSize,
 			tx * stepSize,      0, ty * stepSize,
+			sx * stepSize, height, sy * stepSize,
 			tx * stepSize, height, ty * stepSize,
 		};
 
@@ -150,7 +150,7 @@ void MapMesh::GenerateMesh(float stepSize, float height, float* colorList)
 			vec1[0] * vec2[1] - vec1[1] * vec2[0],
 		};
 
-		int startIdx = vertices.size();
+		int startIdx = (int)vertices.size();
 
 		for (size_t i = 0; i < 4; i++)
 		{

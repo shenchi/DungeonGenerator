@@ -26,7 +26,7 @@ void MapGenerator::SetSeed(unsigned int seed)
 
 void MapGenerator::Start(int cellCount, int randomRadius, int minSideLength, int maxSideLength)
 {
-	if (state != Empty || cellCount <= 0 || randomRadius <= 0 || minSideLength > maxSideLength || minSideLength <= 0)
+	if (state != Empty || cellCount <= 0 || randomRadius <= 0 || minSideLength > maxSideLength || minSideLength < 3)
 	{
 		return;
 	}
@@ -69,6 +69,43 @@ void MapGenerator::Update()
 	case MapGenerator::Finished:
 	default:
 		break;
+	}
+}
+
+void MapGenerator::GenEntryAndExit()
+{
+	if (Finished != state) return;
+
+	auto last = cells.end();
+	auto first = cells.end();
+
+	for (auto i = cells.begin(); i != cells.end(); ++i)
+	{
+		if (i->room)
+		{
+			if (first == cells.end())
+			{
+				first = i;
+			}
+
+			last = i;
+		}
+	}
+
+	if (first != cells.end())
+	{
+		uniform_int_distribution<int> distX(first->x + 1, first->x + first->width - 2);
+		uniform_int_distribution<int> distY(first->y + 1, first->y + first->height - 2);
+		entryX = distX(generator);
+		entryY = distY(generator);
+	}
+
+	if (last != cells.end())
+	{
+		uniform_int_distribution<int> distX(last->x + 1, last->x + last->width - 2);
+		uniform_int_distribution<int> distY(last->y + 1, last->y + last->height - 2);
+		exitX = distX(generator);
+		exitY = distY(generator);
 	}
 }
 

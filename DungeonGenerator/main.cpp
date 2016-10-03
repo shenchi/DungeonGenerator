@@ -97,6 +97,8 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 		}
 		else if (nullptr == map)
 		{
+			mapGen.GenEntryAndExit();
+
 			size_t w = mapWidth = mapGen.Right() - mapGen.Left() + 1;
 			size_t h = mapHeight = mapGen.Bottom() - mapGen.Top() + 1;
 			map = new char[mapWidth * mapHeight];
@@ -105,7 +107,7 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 				(clientRect.bottom - clientRect.top + 1) / mapHeight);
 			mapGen.Gen2DArrayMap(map, w, h, tileTable);
 			mesh.CreateFromGridMap(map, mapWidth, mapHeight, tileDensityTable, nTileDensities, 1);
-			mesh.GenerateMesh(1.0f, 2.0f);
+			//mesh.GenerateMesh(1.0f, 2.0f);
 		}
 	}
 
@@ -256,6 +258,8 @@ void DrawGridMap(HWND hWnd)
 	HPEN bluePen = CreatePen(PS_SOLID, 2, RGB(0, 0, 200));
 	HBRUSH lightBlueBrush = CreateSolidBrush(RGB(200, 200, 255));
 	HBRUSH lightRedBrush = CreateSolidBrush(RGB(255, 200, 200));
+	HBRUSH blueBrush = CreateSolidBrush(RGB(0, 0, 255));
+	HBRUSH greenBrush = CreateSolidBrush(RGB(0, 255, 255));
 	HGDIOBJ originalPen = SelectObject(ps.hdc, blackPen);
 	HGDIOBJ originalBrush = SelectObject(ps.hdc, lightBlueBrush);
 
@@ -277,6 +281,17 @@ void DrawGridMap(HWND hWnd)
 				SelectObject(ps.hdc, originalBrush);
 				break;
 			}
+
+			if (x == mapGen.EntryX() - mapGen.Left() && y == mapGen.EntryY() - mapGen.Top())
+			{
+				SelectObject(ps.hdc, greenBrush);
+			}
+
+			if (x == mapGen.ExitX() - mapGen.Left() && y == mapGen.ExitY() - mapGen.Top())
+			{
+				SelectObject(ps.hdc, blueBrush);
+			}
+
 			DrawGridBox(ps.hdc, x, y);
 		}
 	}
@@ -296,6 +311,8 @@ void DrawGridMap(HWND hWnd)
 	DeleteObject(bluePen);
 	DeleteObject(lightBlueBrush);
 	DeleteObject(lightRedBrush);
+	DeleteObject(blueBrush);
+	DeleteObject(greenBrush);
 	EndPaint(hWnd, &ps);
 }
 

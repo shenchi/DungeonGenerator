@@ -22,7 +22,7 @@ public:
 	MapMesh();
 	~MapMesh();
 
-	void CreateFromGridMap(const char* map, int width, int height, const char* tileTypes, size_t nTileTypes, int defaultDensity);
+	void CreateFromGridMap(const char* map, int width, int height, const char* tileTypes, int nTileTypes, int defaultDensity);
 	void GenerateMesh(float stepSize, float height, float* colorList = nullptr);
 
 	const std::vector<LineWall>& GetWalls() const { return walls; }
@@ -32,6 +32,6 @@ public:
 private:
 	std::vector<LineWall>	walls;
 	std::vector<Vertex>		vertices;
-	std::vector<int>		indices;
+	std::vector<int>	indices;
 };
 
